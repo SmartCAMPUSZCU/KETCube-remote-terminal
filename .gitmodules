@@ -1,0 +1,9 @@
+[submodule "dep/paho"]
+	path = dep/paho
+	url = git@github.com:eclipse/paho.mqtt.c.git
+[submodule "dep/json11"]
+	path = dep/json11
+	url = git@github.com:dropbox/json11
+[submodule "dep/simpleini"]
+	path = dep/simpleini
+	url = git@github.com:brofield/simpleini
