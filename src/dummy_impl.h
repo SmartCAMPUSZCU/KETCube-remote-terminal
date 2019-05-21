@@ -17,14 +17,14 @@ extern "C"
 
 #include "string.h"
 
-static ketCube_terminal_paramSet_t commandIOParams;
+ketCube_terminal_paramSet_t commandIOParams;
 
-static void ketCube_terminal_cmd_about(void) {}
-static void ketCube_terminal_cmd_help(void) {}
-static void ketCube_terminal_cmd_reload(void) {}
-static void ketCube_terminal_cmd_list(void) {}
-static void ketCube_terminal_cmd_enable(void) {}
-static void ketCube_terminal_cmd_disable(void) {}
+void ketCube_terminal_cmd_about(void) {}
+void ketCube_terminal_cmd_help(void) {}
+void ketCube_terminal_cmd_reload(void) {}
+void ketCube_terminal_cmd_list(void) {}
+void ketCube_terminal_cmd_enable(void) {}
+void ketCube_terminal_cmd_disable(void) {}
 
 inline void HW_GetUniqueId(uint8_t *id)
 {
@@ -33,7 +33,7 @@ inline void HW_GetUniqueId(uint8_t *id)
 
 void ketCube_terminal_UsartPrint(char *format, ...) {}
 
-void ketCube_terminal_CoreSeverityPrintln(int severity, char *format, ...) {}
+void ketCube_terminal_CoreSeverityPrintln(ketCube_severity_t severity, char *format, ...) {}
 
 ketCube_cfg_Error_t ketCube_cfg_SetDefaults(ketCube_cfg_moduleIDs_t id, ketCube_cfg_AllocEEPROM_t target, ketCube_cfg_LenEEPROM_t len) { return KETCUBE_CFG_OK; }
 

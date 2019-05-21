@@ -1,16 +1,16 @@
 #ifndef CMD_LOOKUP_H
 #define CMD_LOOKUP_H
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include "ketCube_terminal.h"
 #include "ketCube_common.h"
 #include "ketCube_cfg.h"
 #include "ketCube_coreCfg.h"
 #include "ketCube_modules.h"
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 	/* command input/output parameters */
 	extern ketCube_terminal_paramSet_t commandIOParams;
