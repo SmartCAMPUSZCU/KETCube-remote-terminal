@@ -30,7 +30,7 @@ ketCube_moduleID_t lookup_module_id(const std::string& moduleName)
 			return modlist[i].id;
 	}
 
-	return KETCUBE_INVALID_MODULEID;
+	return KETCUBE_MODULEID_INVALID;
 }
 
 static uint8_t ketCube_terminal_getNextParam(const char* commandBuffer, uint8_t ptr)
@@ -363,7 +363,7 @@ bool Terminal_Base::Encode_Command(const std::string& cmd, std::vector<uint8_t>&
 		if (lupphase == LookupPhase::Module)
 		{
 			moduleId = lookup_module_id(tokens[tok]);
-			if (moduleId == KETCUBE_INVALID_MODULEID)
+			if (moduleId == KETCUBE_MODULEID_INVALID)
 			{
 				//std::cerr << "Module " << tokens[tok] << " not found" << std::endl;
 				return false;
