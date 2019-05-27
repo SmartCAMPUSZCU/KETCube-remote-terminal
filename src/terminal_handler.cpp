@@ -144,6 +144,16 @@ int Terminal_Handler::Run(Terminal_Base& terminal)
 						Process_Batch(terminal, batchVec, seq);
 					}
 				}
+				else if (inStr == "!abort")
+				{
+					if (!batchMode)
+						mOutput << "Not in batch mode!" << std::endl;
+					else
+					{
+						batchMode = false;
+						mOutput << "Batch mode aborted" << std::endl;
+					}
+				}
 				else
 					mOutput << "Unknown control command: " << inStr << std::endl;
 
