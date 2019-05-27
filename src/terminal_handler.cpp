@@ -1,8 +1,12 @@
 #include <iostream>
 #include <vector>
+#include <random>
 #include "mqtt_terminal.h"
 
 #include "terminal_handler.h"
+
+// random device instance for generating initial SEQ's
+static std::random_device Random_Device;
 
 Terminal_Handler::Terminal_Handler(std::istream& input, std::ostream& output, long responseTimeoutSecs, long maxBatchCommands)
 	: mInput(input), mOutput(output), mResponseTimeout(responseTimeoutSecs * 1000), mMaxBatchCommands(static_cast<size_t>(maxBatchCommands))
@@ -99,7 +103,7 @@ int Terminal_Handler::Run(Terminal_Base& terminal)
 	size_t batchHdrStart;
 
 	batchMode = false;
-	uint8_t seq = 0;
+	uint8_t seq = static_cast<uint8_t>(Random_Device());
 
 	batchCtr = 0;
 
