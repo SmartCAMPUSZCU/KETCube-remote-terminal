@@ -113,8 +113,7 @@ bool MQTT_Terminal::Reconnect()
 {
 	int rc;
 
-	if ((rc = MQTTClient_connect(mClient, &mConnOpts)) != MQTTCLIENT_SUCCESS)
-	{
+	if ((rc = MQTTClient_connect(mClient, &mConnOpts)) != MQTTCLIENT_SUCCESS) {
 		std::cerr << "Unable to connect to MQTT server" << std::endl;
 		return false;
 	}
@@ -152,15 +151,14 @@ bool MQTT_Terminal::Incoming_Message(const std::string& topicName, const std::st
 	std::string err;
 	json11::Json parsedMsg = json11::Json::parse(message, err);
 
-	if (!err.empty())
-	{
+	if (!err.empty()) {
 		// TODO: proper message
 		std::cerr << "json parse error: " << err << std::endl;
 		return false;
 	}
 
-	if (parsedMsg["fPort"].int_value() == mSettings.loraPort && parsedMsg["data"].is_string())
-	{
+	if (parsedMsg["fPort"].int_value() == mSettings.loraPort && parsedMsg["data"].is_string()) {
+
 		std::vector<uint8_t> out;
 		Base64::Decode(out, parsedMsg["data"].string_value());
 

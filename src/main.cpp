@@ -65,15 +65,13 @@ class CLIParams
 
 	public:
 		// constructor passes arguments to internal representation
-		CLIParams(const int argc, const char* const* argv)
-		{
+		CLIParams(const int argc, const char* const* argv) {
 			for (int i = 1; i < argc; ++i)
 				tokens.push_back(std::string(argv[i]));
 		}
 
 		// retrieves CLI option, returns default value if not found
-		const std::string& getOpt(const std::string &option, const std::string& defaultValue) const
-		{
+		const std::string& getOpt(const std::string &option, const std::string& defaultValue) const {
 			std::vector<std::string>::const_iterator itr;
 			itr = std::find(tokens.begin(), tokens.end(), option);
 
@@ -84,8 +82,7 @@ class CLIParams
 		}
 
 		// determines the presence of CLI option
-		bool hasOpt(const std::string &option) const
-		{
+		bool hasOpt(const std::string &option) const {
 			return std::find(tokens.begin(), tokens.end(), option) != tokens.end();
 		}
 };
@@ -94,8 +91,9 @@ class CLIParams
 bool Load_Config(const std::string& path)
 {
 	CSimpleIni cfg;
-	if (cfg.LoadFile(path.c_str()) != SI_OK)
+	if (cfg.LoadFile(path.c_str()) != SI_OK) {
 		return false;
+	}
 
 	mqttSettings.server = cfg.GetValue("mqtt", "server", nullptr);
 	mqttSettings.port = static_cast<uint16_t>(cfg.GetLongValue("mqtt", "port", 1883));
@@ -121,8 +119,7 @@ int main(int argc, char** argv)
 
 	std::string configLoc = params.getOpt("--config", params.getOpt("-c", "config.ini"));
 
-	if (!Load_Config(configLoc))
-	{
+	if (!Load_Config(configLoc)) {
 		std::cerr << "Could not load config file" << std::endl;
 		return 1;
 	}
@@ -132,26 +129,25 @@ int main(int argc, char** argv)
 
 	MQTT_Terminal term(mqttSettings);
 
-	if (!term.Init())
+	if (!term.Init()) {
 		return 2;
+	}
 
 	std::ifstream inFs;
-	if (!inputFile.empty())
-	{
+	if (!inputFile.empty()) {
+
 		inFs.open(inputFile);
-		if (!inFs.is_open())
-		{
+		if (!inFs.is_open()) {
 			std::cerr << "Could not open input file: " << inputFile << std::endl;
 			return 3;
 		}
 	}
 
 	std::ofstream outFs;
-	if (!outputFile.empty())
-	{
+	if (!outputFile.empty()) {
+
 		outFs.open(outputFile);
-		if (!outFs.is_open())
-		{
+		if (!outFs.is_open()) {
 			std::cerr << "Could not open output file: " << outputFile << std::endl;
 			return 3;
 		}

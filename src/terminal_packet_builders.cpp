@@ -106,8 +106,9 @@ void Terminal_Command_Buffer::Serialize(std::vector<uint8_t>& bytesTarget, const
 	}
 
 	// serialize all terminal command blocks
-	for (size_t i = 0; i < mBlocks.size(); i++)
+	for (size_t i = 0; i < mBlocks.size(); i++) {
 		mBlocks[i].Serialize(bytesTarget, opts);
+	}
 }
 
 void Terminal_Command_Buffer::Append(const Terminal_Command_Block& block)
@@ -123,13 +124,15 @@ void Terminal_Command_Buffer::Reset()
 void Terminal_Command_Block::Serialize(std::vector<uint8_t>& bytesTarget, const TSerializable_Options& options) const
 {
 	// prepend length; the length includes module ID ("subheader")
-	if (options.PrependLength)
+	if (options.PrependLength) {
 		bytesTarget.push_back(static_cast<uint8_t>(size() + (options.IsModuleID16Bit ? sizeof(uint16_t) : sizeof(uint8_t))));
+	}
 
 	// append module ID (LSB, and if 16bit flag is set, include MSB)
 	bytesTarget.push_back(static_cast<uint8_t>(mModuleID & 0xFF));
-	if (options.IsModuleID16Bit)
+	if (options.IsModuleID16Bit) {
 		bytesTarget.push_back(static_cast<uint8_t>((mModuleID >> 8) & 0xFF));
+	}
 
 	// copy the rest of contents (the actual "path")
 	std::copy(begin(), end(), std::back_inserter(bytesTarget));

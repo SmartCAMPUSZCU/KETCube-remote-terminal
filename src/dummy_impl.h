@@ -70,16 +70,19 @@ void ketCube_terminal_cmd_list(void) {}
 void ketCube_terminal_cmd_enable(void) {}
 void ketCube_terminal_cmd_disable(void) {}
 
-inline void HW_GetUniqueId(uint8_t *id)
-{
+inline void HW_GetUniqueId(uint8_t *id) {
 	memset(id, 0, 8);
 }
 
-void ketCube_terminal_UsartPrint(char *format, ...) {}
+void ketCube_terminal_UsartPrint(char *format, ...) {
+}
 
-void ketCube_terminal_CoreSeverityPrintln(ketCube_severity_t severity, char *format, ...) {}
+void ketCube_terminal_CoreSeverityPrintln(ketCube_severity_t severity, char *format, ...) {
+}
 
-ketCube_cfg_Error_t ketCube_cfg_SetDefaults(ketCube_cfg_moduleIDs_t id, ketCube_cfg_AllocEEPROM_t target, ketCube_cfg_LenEEPROM_t len) { return KETCUBE_CFG_OK; }
+ketCube_cfg_Error_t ketCube_cfg_SetDefaults(ketCube_cfg_moduleIDs_t id, ketCube_cfg_AllocEEPROM_t target, ketCube_cfg_LenEEPROM_t len) {
+	return KETCUBE_CFG_OK;
+}
 
 ketCube_batMeas_battery_t ketCube_batMeas_batList[] = { { NULL, NULL, 0, 0 } };
 

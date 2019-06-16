@@ -75,18 +75,15 @@ extern "C"
 #include "ketCube_cmdList.c"
 #include "ketCube_moduleList.c"
 
-ketCube_terminal_cmd_t* get_cmd_tree()
-{
+ketCube_terminal_cmd_t* get_cmd_tree() {
 	return ketCube_terminal_commands;
 }
 
-ketCube_cfg_Module_t* get_module_list()
-{
+ketCube_cfg_Module_t* get_module_list() {
 	return ketCube_modules_List;
 }
 
-size_t get_module_count()
-{
+size_t get_module_count() {
 	return ketCube_modules_CNT;
 }
 

@@ -67,26 +67,22 @@ void Terminal_Handler::Process_Single(Terminal_Base& terminal, const Terminal_Co
 	cmdBuf.Serialize(encoded);
 
 	result = terminal.Send_Command(encoded);
-	if (!result)
-	{
+	if (!result) {
 		mOutput << "Send_Command: failed to send command: " << inStr << std::endl;
 		return;
 	}
 
 	// when sending "reload", we actually have no chance to send back response
-	if (inStr == "reload")
-	{
+	if (inStr == "reload") {
 		mOutput << "(node will be reloaded on next period timer tick; no response expected)" << std::endl;
 		return;
 	}
 
-	do
-	{
+	do {
 		response.clear();
 
 		result = terminal.Await_Message(response, mResponseTimeout);
-		if (!result)
-		{
+		if (!result) {
 			mOutput << "Await_Message: no response received" << std::endl;
 			break;
 		}
@@ -94,8 +90,7 @@ void Terminal_Handler::Process_Single(Terminal_Base& terminal, const Terminal_Co
 		result = terminal.Decode_Single_Response(response, responseOK, respStr, cmdBuf.Get_Sequence_No(), seqOK);
 	} while (!seqOK);
 
-	if (!result)
-	{
+	if (!result) {
 		mOutput << "Decode_Response: failed to decode incoming byte buffer" << std::endl;
 		return;
 	}
@@ -112,19 +107,16 @@ void Terminal_Handler::Process_Batch(Terminal_Base& terminal, const Terminal_Com
 	cmdBuf.Serialize(encoded);
 
 	result = terminal.Send_Command(encoded);
-	if (!result)
-	{
+	if (!result) {
 		mOutput << "Send_Command: failed to send command batch" << std::endl;
 		return;
 	}
 
-	do
-	{
+	do {
 		response.clear();
 
 		result = terminal.Await_Message(response, mResponseTimeout);
-		if (!result)
-		{
+		if (!result) {
 			mOutput << "Await_Message: no response received" << std::endl;
 			return;
 		}
@@ -132,8 +124,7 @@ void Terminal_Handler::Process_Batch(Terminal_Base& terminal, const Terminal_Com
 		result = terminal.Decode_Batch_Response(response, responseOK, respStr, cmdBuf.Get_Sequence_No(), seqOK);
 	} while (!seqOK);
 
-	if (!result)
-	{
+	if (!result) {
 		mOutput << "Decode_Response: failed to decode incoming byte buffer" << std::endl;
 		return;
 	}
@@ -156,23 +147,19 @@ int Terminal_Handler::Run(Terminal_Base& terminal)
 
 	auto assignSeq = [&seq]() { return ++seq; };
 
-	while (mInput.good() && mOutput.good())
-	{
+	while (mInput.good() && mOutput.good()) {
 		mOutput << ">> ";
 
-		if (std::getline(mInput, inStr))
-		{
+		if (std::getline(mInput, inStr)) {
 			if (inStr.length() == 0)
 				continue;
 
-			if (inStr[0] == '!')
-			{
-				if (inStr == "!batch")
-				{
-					if (batchMode)
+			if (inStr[0] == '!') {
+
+				if (inStr == "!batch") {
+					if (batchMode) {
 						mOutput << "Batch mode already started!" << std::endl;
-					else
-					{
+					} else {
 						batchCtr = 0;
 						batchMode = true;
 						mOutput << "Batch mode begin" << std::endl;
@@ -180,56 +167,45 @@ int Terminal_Handler::Run(Terminal_Base& terminal)
 						cmdBuf.Reset();
 						terminal.Start_Command_Batch(cmdBuf, assignSeq());
 					}
-				}
-				else if (inStr == "!commit")
-				{
-					if (!batchMode)
+				} else if (inStr == "!commit") {
+					if (!batchMode) {
 						mOutput << "Not in batch mode!" << std::endl;
-					else if (batchCtr == 0)
+					} else if (batchCtr == 0) {
 						mOutput << "No batch commands entered!" << std::endl;
-					else
-					{
+					} else {
 						batchMode = false;
 						mOutput << "Batch mode ended; performing commit" << std::endl;
 
 						Process_Batch(terminal, cmdBuf);
 					}
-				}
-				else if (inStr == "!abort")
-				{
-					if (!batchMode)
+				} else if (inStr == "!abort") {
+					if (!batchMode) {
 						mOutput << "Not in batch mode!" << std::endl;
-					else
-					{
+					} else	{
 						batchMode = false;
 						mOutput << "Batch mode aborted" << std::endl;
 					}
-				}
-				else
+				} else {
 					mOutput << "Unknown control command: " << inStr << std::endl;
+				}
 
 				continue;
 			}
 
 			Terminal_Command_Block cmdBlock;
 
-			if (batchMode)
-			{
-				if (batchCtr >= mMaxBatchCommands)
-				{
+			if (batchMode) {
+				if (batchCtr >= mMaxBatchCommands) {
 					mOutput << "Maximum number of batch commands reached: " << batchCtr << "; please, perform !commit" << std::endl;
 					continue;
 				}
-			}
-			else
-			{
+			} else	{
 				cmdBuf.Reset();
 				terminal.Start_Single_Command(cmdBuf, assignSeq());
 			}
 
 			result = terminal.Encode_Command(inStr, cmdBlock);
-			if (!result)
-			{
+			if (!result) {
 				mOutput << "Encode_Command: unknown command: " << inStr << std::endl;
 				continue;
 			}
@@ -237,16 +213,15 @@ int Terminal_Handler::Run(Terminal_Base& terminal)
 			cmdBuf.Set_Flag_16bit_Module_ID(cmdBuf.Has_Flag_16bit_Module_Id() || (cmdBlock.Get_Module_ID() > 0xFF));
 			cmdBuf.Append(cmdBlock);
 
-			if (!batchMode)
+			if (!batchMode) {
 				Process_Single(terminal, cmdBuf, inStr);
-			else
-			{
+			} else {
 				batchCtr++;
 				mOutput << "Enqueued batch command: " << inStr << std::endl;
 			}
-		}
-		else
+		} else {
 			break;
+		}
 	}
 
 	return 0;
