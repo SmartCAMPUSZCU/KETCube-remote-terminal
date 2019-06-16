@@ -43,7 +43,6 @@
  */
 
 #include "terminal.h"
-#include "impl_bridge.h"
 
 #include <iostream>
 #include <vector>
@@ -341,6 +340,24 @@ static bool ketCube_terminal_processCommandErrors(ketCube_terminal_command_error
 		case KETCUBE_TERMINAL_CMD_ERR_MEMORY_IO_FAIL:
 			out += "could not read/write memory";
 			break;
+		case KETCUBE_TERMINAL_CMD_ERR_COMMAND_NOT_FOUND:
+			out += "requested command not found";
+			break;
+		case KETCUBE_TERMINAL_CMD_ERR_MODULE_NOT_FOUND:
+			out += "requested module not found";
+			break;
+		case KETCUBE_TERMINAL_CMD_ERR_FAILED_CONTEXT:
+			out += "invalid command context";
+			break;
+		case KETCUBE_TERMINAL_CMD_ERR_UNSPECIFIED_ERROR:
+			out += "unspecified error";
+			break;
+		case KETCUBE_TERMINAL_CMD_ERR_NOT_SUPPORTED:
+			out += "command or parameter not supported";
+			break;
+		case KETCUBE_TERMINAL_CMD_ERR_CORE_API_MISMATCH:
+			out += "mismatch between local and remote API version (local: " + std::to_string(KETCUBE_MODULEID_CORE_API) + ")";
+			break;
 		default:
 			out += "unknown error (" + std::to_string(retCode) + ")";
 			break;
@@ -349,35 +366,25 @@ static bool ketCube_terminal_processCommandErrors(ketCube_terminal_command_error
 	return false;
 }
 
-void Terminal_Base::Start_Single_Command(std::vector<uint8_t>& target, uint8_t seq)
+void Terminal_Base::Start_Single_Command(Terminal_Command_Buffer& target, uint8_t seq)
 {
-	target.push_back(static_cast<uint8_t>(KETCUBE_TERMINAL_OPCODE_CMD));
-	target.push_back(seq);
+	target.Set_Opcode(KETCUBE_TERMINAL_OPCODE_CMD);
+	target.Set_Flag_16bit_Module_ID(false);
+	target.Set_Sequence_No(seq);
 
 	mPendingCommandRef.clear();
 }
 
-void Terminal_Base::Start_Command_Batch(std::vector<uint8_t>& target, uint8_t seq)
+void Terminal_Base::Start_Command_Batch(Terminal_Command_Buffer& target, uint8_t seq)
 {
-	target.push_back(static_cast<uint8_t>(KETCUBE_TERMINAL_OPCODE_BATCH));
-	target.push_back(seq);
+	target.Set_Opcode(KETCUBE_TERMINAL_OPCODE_BATCH);
+	target.Set_Flag_16bit_Module_ID(false);
+	target.Set_Sequence_No(seq);
 
 	mPendingCommandRef.clear();
 }
 
-size_t Terminal_Base::Prepare_Batch_Command_Header(std::vector<uint8_t>& target)
-{
-	target.push_back(0);	// dummy byte, will be filled
-	return target.size() - 1;
-}
-
-void Terminal_Base::Append_Batch_Command(size_t beginHeaderByte, std::vector<uint8_t>& target, const std::vector<uint8_t>& cmdBuffer)
-{
-	target[beginHeaderByte] = static_cast<uint8_t>(cmdBuffer.size());
-	std::copy(cmdBuffer.begin(), cmdBuffer.end(), std::back_inserter(target));
-}
-
-bool Terminal_Base::Encode_Command(const std::string& cmd, std::vector<uint8_t>& target)
+bool Terminal_Base::Encode_Command(const std::string& cmd, Terminal_Command_Block& target)
 {
 	size_t i;
 
@@ -440,10 +447,7 @@ bool Terminal_Base::Encode_Command(const std::string& cmd, std::vector<uint8_t>&
 			ketCube_terminal_andCmdFlags(&activeFlags, &activeFlags, &(subtree[i].flags));
 
 		if (lupphase == LookupPhase::Module)
-		{
-			target.push_back(moduleId & 0xFF);
-			target.push_back(moduleId >> 8);
-		}
+			target.Set_Module_ID(moduleId);
 		else
 			target.push_back(static_cast<uint8_t>(i));
 
@@ -545,8 +549,10 @@ bool Terminal_Base::Decode_Single_Response(const std::vector<uint8_t>& response,
 	success = false;
 	responseOK = false;
 
+	const ketCube_remoteTerminal_packet_header_t* inHeader = reinterpret_cast<const ketCube_remoteTerminal_packet_header_t*>(response.data());
+
 	// has to be at least two bytes (opcode and size)
-	if (response.size() < 2)
+	if (response.size() < sizeof(ketCube_remoteTerminal_packet_header_t))
 	{
 		resultBuilder << "No data received" << std::endl;
 		success = false;
@@ -558,13 +564,13 @@ bool Terminal_Base::Decode_Single_Response(const std::vector<uint8_t>& response,
 		success = false;
 	}
 	// sequence numbers must match
-	else if (response[1] != seq)
+	else if (inHeader->seq != seq)
 	{
 		seqOK = false;
 		success = false;
 	}
 	// decoding single response must begin with single command opcode
-	else if (response[0] != KETCUBE_TERMINAL_OPCODE_CMD)
+	else if (inHeader->opcode != KETCUBE_TERMINAL_OPCODE_CMD)
 	{
 		resultBuilder << "Unexpected result opcode " << static_cast<int>(response[0]) << " (expected " << static_cast<int>(KETCUBE_TERMINAL_OPCODE_CMD) << ")" << std::endl;
 		success = false;
@@ -592,8 +598,10 @@ bool Terminal_Base::Decode_Batch_Response(const std::vector<uint8_t>& response, 
 	success = false;
 	responseOK = false;
 
+	const ketCube_remoteTerminal_packet_header_t* inHeader = reinterpret_cast<const ketCube_remoteTerminal_packet_header_t*>(response.data());
+
 	// has to be at least two bytes (opcode and size)
-	if (response.size() < 2)
+	if (response.size() < sizeof(ketCube_remoteTerminal_packet_header_t))
 	{
 		resultBuilder << "No data received" << std::endl;
 		success = false;
@@ -605,13 +613,13 @@ bool Terminal_Base::Decode_Batch_Response(const std::vector<uint8_t>& response, 
 		success = false;
 	}
 	// sequence numbers must match
-	else if (response[1] != seq)
+	else if (inHeader->seq != seq)
 	{
 		seqOK = false;
 		success = false;
 	}
 	// decoding batch response must begin with batch command opcode
-	else if (response[0] != KETCUBE_TERMINAL_OPCODE_BATCH)
+	else if (inHeader->opcode != KETCUBE_TERMINAL_OPCODE_BATCH)
 	{
 		resultBuilder << "Unexpected result opcode " << static_cast<int>(response[0]) << " (expected " << static_cast<int>(KETCUBE_TERMINAL_OPCODE_BATCH) << ")" << std::endl;
 		success = false;

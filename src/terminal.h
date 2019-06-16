@@ -51,7 +51,8 @@
 #include <condition_variable>
 #include <chrono>
 
-struct ketCube_terminal_cmd_t;
+#include "impl_bridge.h"
+#include "terminal_packet_builders.h"
 
 /*
  * Base class for all terminal implementations
@@ -80,17 +81,12 @@ class Terminal_Base
 		/* base implementation */
 
 		// starts single command routine
-		void Start_Single_Command(std::vector<uint8_t>& target, uint8_t seq);
+		void Start_Single_Command(Terminal_Command_Buffer& target, uint8_t seq);
 		// starts batch command routine
-		void Start_Command_Batch(std::vector<uint8_t>& target, uint8_t seq);
-
-		// prepares header for batch command
-		size_t Prepare_Batch_Command_Header(std::vector<uint8_t>& target);
-		// appends encoded command to batch buffer
-		void Append_Batch_Command(size_t beginHeaderByte, std::vector<uint8_t>& target, const std::vector<uint8_t>& cmdBuffer);
+		void Start_Command_Batch(Terminal_Command_Buffer& target, uint8_t seq);
 
 		// encodes command using command tree
-		bool Encode_Command(const std::string& cmd, std::vector<uint8_t>& target);
+		bool Encode_Command(const std::string& cmd, Terminal_Command_Block& target);
 
 		// decodes response of single command requst
 		bool Decode_Single_Response(const std::vector<uint8_t>& response, bool& responseOK, std::string& target, uint8_t seq, bool& seqOK) const;

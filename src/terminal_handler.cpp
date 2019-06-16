@@ -58,11 +58,13 @@ Terminal_Handler::Terminal_Handler(std::istream& input, std::ostream& output, lo
 	//
 }
 
-void Terminal_Handler::Process_Single(Terminal_Base& terminal, std::vector<uint8_t>& encoded, std::string& inStr, uint8_t seq)
+void Terminal_Handler::Process_Single(Terminal_Base& terminal, const Terminal_Command_Buffer& cmdBuf, std::string& inStr)
 {
 	bool result, responseOK, seqOK;
-	std::vector<uint8_t> response;
+	std::vector<uint8_t> encoded, response;
 	std::string respStr;
+
+	cmdBuf.Serialize(encoded);
 
 	result = terminal.Send_Command(encoded);
 	if (!result)
@@ -89,7 +91,7 @@ void Terminal_Handler::Process_Single(Terminal_Base& terminal, std::vector<uint8
 			break;
 		}
 
-		result = terminal.Decode_Single_Response(response, responseOK, respStr, seq, seqOK);
+		result = terminal.Decode_Single_Response(response, responseOK, respStr, cmdBuf.Get_Sequence_No(), seqOK);
 	} while (!seqOK);
 
 	if (!result)
@@ -101,11 +103,13 @@ void Terminal_Handler::Process_Single(Terminal_Base& terminal, std::vector<uint8
 	std::cout << respStr << std::endl;
 }
 
-void Terminal_Handler::Process_Batch(Terminal_Base& terminal, std::vector<uint8_t>& encoded, uint8_t seq)
+void Terminal_Handler::Process_Batch(Terminal_Base& terminal, const Terminal_Command_Buffer& cmdBuf)
 {
 	bool result, responseOK, seqOK;
-	std::vector<uint8_t> response;
+	std::vector<uint8_t> encoded, response;
 	std::string respStr;
+
+	cmdBuf.Serialize(encoded);
 
 	result = terminal.Send_Command(encoded);
 	if (!result)
@@ -125,7 +129,7 @@ void Terminal_Handler::Process_Batch(Terminal_Base& terminal, std::vector<uint8_
 			return;
 		}
 
-		result = terminal.Decode_Batch_Response(response, responseOK, respStr, seq, seqOK);
+		result = terminal.Decode_Batch_Response(response, responseOK, respStr, cmdBuf.Get_Sequence_No(), seqOK);
 	} while (!seqOK);
 
 	if (!result)
@@ -139,12 +143,11 @@ void Terminal_Handler::Process_Batch(Terminal_Base& terminal, std::vector<uint8_
 
 int Terminal_Handler::Run(Terminal_Base& terminal)
 {
-	std::vector<uint8_t> vec, batchVec, response;
+	std::vector<uint8_t> response;
+	Terminal_Command_Buffer cmdBuf;
 	bool result, batchMode;
 	std::string inStr, respStr;
 	size_t batchCtr;
-
-	size_t batchHdrStart;
 
 	batchMode = false;
 	uint8_t seq = static_cast<uint8_t>(Random_Device());
@@ -171,11 +174,11 @@ int Terminal_Handler::Run(Terminal_Base& terminal)
 					else
 					{
 						batchCtr = 0;
-						batchVec.clear();
 						batchMode = true;
 						mOutput << "Batch mode begin" << std::endl;
 
-						terminal.Start_Command_Batch(batchVec, assignSeq());
+						cmdBuf.Reset();
+						terminal.Start_Command_Batch(cmdBuf, assignSeq());
 					}
 				}
 				else if (inStr == "!commit")
@@ -189,7 +192,7 @@ int Terminal_Handler::Run(Terminal_Base& terminal)
 						batchMode = false;
 						mOutput << "Batch mode ended; performing commit" << std::endl;
 
-						Process_Batch(terminal, batchVec, seq);
+						Process_Batch(terminal, cmdBuf);
 					}
 				}
 				else if (inStr == "!abort")
@@ -208,7 +211,7 @@ int Terminal_Handler::Run(Terminal_Base& terminal)
 				continue;
 			}
 
-			vec.clear();
+			Terminal_Command_Block cmdBlock;
 
 			if (batchMode)
 			{
@@ -217,26 +220,28 @@ int Terminal_Handler::Run(Terminal_Base& terminal)
 					mOutput << "Maximum number of batch commands reached: " << batchCtr << "; please, perform !commit" << std::endl;
 					continue;
 				}
-
-				batchHdrStart = terminal.Prepare_Batch_Command_Header(batchVec);
 			}
 			else
-				terminal.Start_Single_Command(vec, assignSeq());
+			{
+				cmdBuf.Reset();
+				terminal.Start_Single_Command(cmdBuf, assignSeq());
+			}
 
-			result = terminal.Encode_Command(inStr, vec);
+			result = terminal.Encode_Command(inStr, cmdBlock);
 			if (!result)
 			{
 				mOutput << "Encode_Command: unknown command: " << inStr << std::endl;
 				continue;
 			}
 
+			cmdBuf.Set_Flag_16bit_Module_ID(cmdBuf.Has_Flag_16bit_Module_Id() || (cmdBlock.Get_Module_ID() > 0xFF));
+			cmdBuf.Append(cmdBlock);
+
 			if (!batchMode)
-				Process_Single(terminal, vec, inStr, seq);
+				Process_Single(terminal, cmdBuf, inStr);
 			else
 			{
 				batchCtr++;
-
-				terminal.Append_Batch_Command(batchHdrStart, batchVec, vec);
 				mOutput << "Enqueued batch command: " << inStr << std::endl;
 			}
 		}

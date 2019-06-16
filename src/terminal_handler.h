@@ -66,9 +66,9 @@ class Terminal_Handler final
 
 	protected:
 		// processes sending of single command request
-		void Process_Single(Terminal_Base& terminal, std::vector<uint8_t>& encoded, std::string& inStr, uint8_t seq);
+		void Process_Single(Terminal_Base& terminal, const Terminal_Command_Buffer& cmdBuf, std::string& inStr);
 		// processes sending of batch command request
-		void Process_Batch(Terminal_Base& terminal, std::vector<uint8_t>& encoded, uint8_t seq);
+		void Process_Batch(Terminal_Base& terminal, const Terminal_Command_Buffer& cmdBuf);
 
 	public:
 		Terminal_Handler(std::istream& input, std::ostream& output, long responseTimeoutSecs = 60, long maxBatchCmds = 3);
