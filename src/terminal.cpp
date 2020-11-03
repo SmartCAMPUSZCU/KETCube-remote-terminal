@@ -60,7 +60,7 @@ enum class LookupPhase
 	Subtree		// module or subtree follows (module NYI)
 };
 
-ketCube_terminal_paramSet_t commandIOParams;
+extern ketCube_terminal_paramSet_t commandIOParams;
 
 ketCube_moduleID_t lookup_module_id(const std::string& moduleName)
 {
